@@ -7,7 +7,7 @@ const session = require("express-session");
 const SequelizeStore = require("connect-session-sequelize")(session.Store);
 
 const allRoutes = require("./controllers");
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5678;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
