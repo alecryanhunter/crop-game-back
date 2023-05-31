@@ -18,6 +18,9 @@ User.init({
     },
     email: {
         type: DataTypes.STRING,
+        validate: {
+            isEmail: true
+          }
     },
     current_title: {
         type: DataTypes.STRING,
