@@ -1,22 +1,31 @@
 const User = require("./User");
-const UserFriend = require("./UserFriend");
+const Friendship = require("./Friendship");
 const DirectMessage = require("./DirectMessage");
 const Bundle = require("./Bundle");
 const UserBundle = require("./UserBundle");
 
-// UserFriend Many-To-Many Association
+// Friendship Many-To-Many Self-Referencing Association
 User.belongsToMany(User, {
-    as: "Friends",
-    through: UserFriend,
+    foreignKey: "Friend1Id",
+    as: "Friend2",
+    through: Friendship,
     onDelete: "CASCADE",
 });
 
-// DirectMessage Many-To-Many Association
-User.belongsToMany(User, {
-    foreignKey: 'SenderId', 
-    as: "Receivers",
-    through: DirectMessage,
+// DirectMessage Associations : 
+    // One[Friendship]-To-Many[DirectMessages]
+Friendship.hasMany(DirectMessage, {
     onDelete: "CASCADE",
+});
+DirectMessage.belongsTo(Friendship)
+
+    // One[User]-To-Many[DirectMessages]
+DirectMessage.belongsTo(User, {
+    foreignKey: "SenderId",
+})
+User.hasMany(DirectMessage, {
+    foreignKey: "SenderId",
+    onDelete: "CASCADE"
 });
 
 // UserBundle Many-To-Many Association
@@ -31,7 +40,7 @@ Bundle.belongsToMany(User, {
 
 module.exports = {
     User: User,
-    UserFriend: UserFriend,
+    Friendship: Friendship,
     DirectMessage: DirectMessage,
     Bundle: Bundle,
     UserBundle: UserBundle,    
