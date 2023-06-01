@@ -1,5 +1,5 @@
 const sequelize = require("../config/connection");
-const { User, UserFriend, DirectMessage, Bundle, UserBundle } = require("../models");
+const { User, Friendship, DirectMessage, Bundle, UserBundle } = require("../models");
 
 const users = [
     {
@@ -14,46 +14,36 @@ const users = [
     },
 ];
 
-const userFriends = [
+const friendships = [
     {
-        UserId: 1,
-        FriendId: 2,
+        Friend1Id: 1,
+        Friend2Id: 2,
         status: "Pending",
     },{
-        UserId: 2,
-        FriendId: 1,
-        status: "Pending",
-    },{
-        UserId: 1,
-        FriendId: 3,
+        Friend1Id: 1,
+        Friend2Id: 3,
         status: "Confirmed",
     },{
-        UserId: 3,
-        FriendId: 1,
-        status: "Confirmed",
-    },{
-        UserId: 2,
-        FriendId: 3,
+
+        Friend1Id: 2,
+        Friend2Id: 3,
         status: "Blocked",
-    },{
-        UserId: 3,
-        FriendId: 2,
-        status: "Blocked",
+
     },
 ];
 
 const directMessages = [
     {
+        FriendshipId: 1,
         SenderId: 1,
-        ReceiverId: 2,
         message: "Friend Request",
     },{
+        FriendshipId: 2,
         SenderId: 1,
-        ReceiverId: 3,
         message: "Lobby 12",
     },{
+        FriendshipId: 2,
         SenderId: 3,
-        ReceiverId: 1,
         message: "OMW!",
     },
 ];
@@ -100,7 +90,7 @@ const startSeedin = async () => {
     try {
         await sequelize.sync({ force: true });
         await User.bulkCreate(users, { individualHooks: true });
-        await UserFriend.bulkCreate(userFriends, { individualHooks: true });
+        await Friendship.bulkCreate(friendships, { individualHooks: true });
         await DirectMessage.bulkCreate(directMessages, { individualHooks: true });
         await Bundle.bulkCreate(bundles, { individualHooks: true });
         await UserBundle.bulkCreate(userBundles, { individualHooks: true });

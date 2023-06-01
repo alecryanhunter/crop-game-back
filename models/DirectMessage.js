@@ -4,17 +4,17 @@ const sequelize = require("../config/connection");
 class DirectMessage extends Model {}
 
 DirectMessage.init({
-    SenderId: {
+    FriendshipId: {
         type: DataTypes.INTEGER,
         references: {
-        model: 'User',
+        model: 'Friendships',
         key: 'id',
         },
     },
-    ReceiverId: {
+    SenderId: {
         type: DataTypes.INTEGER,
         references: {
-        model: 'User',
+        model: 'Users',
         key: 'id',
         },
     },

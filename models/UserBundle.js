@@ -7,14 +7,14 @@ UserBundle.init({
     UserId: {
         type: DataTypes.INTEGER,
         references: {
-        model: 'User',
+        model: 'Users',
         key: 'id',
         },
     },
     BundleId: {
         type: DataTypes.INTEGER,
         references: {
-        model: 'Bundle',
+        model: 'Bundles',
         key: 'id',
         },
     },

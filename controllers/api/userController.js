@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User, UserFriend, DirectMessage, Bundle, UserBundle } = require("../../models")
+const { User, Friendship, DirectMessage, Bundle, UserBundle } = require("../../models")
 const bcrypt = require("bcrypt");
 
 // Routes for /api/users
@@ -29,7 +29,7 @@ router.get("/:username", (req, res) => {
             {
                 model: User,
                 as: "Friends",
-                through: UserFriend,
+                through: Friendship,
         }],
     }).then(userObj => {
         if (!userObj) {
