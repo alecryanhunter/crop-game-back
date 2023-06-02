@@ -48,8 +48,10 @@ router.get("/:username", (req, res) => {
         UserFriendships.FriendshipId, Friendships.status AS friendship_status,
         DirectMessages.SenderId, IF(SenderId = Users.id, Users.username, Friends.username) AS sender_name,
         IF(SenderId = Users.id, Users.profile_pic, Friends.profile_pic) AS sender_profile_pic,
+        IF(SenderId = Users.id, Users.current_title, Friends.current_title) AS sender_current_title,
         IF(SenderId = Users.id, Friends.id, Users.id) AS ReceiverId, IF(SenderId = Users.id, Friends.username, Users.username) AS receiver_name,
-        IF(SenderId = Users.id, Friends.profile_pic, Users.profile_pic) AS receiver_profile_pic
+        IF(SenderId = Users.id, Friends.profile_pic, Users.profile_pic) AS receiver_profile_pic,
+        IF(SenderId = Users.id, Friends.current_title, Users.current_title) AS receiver_current_title
         
         FROM Users
         LEFT JOIN UserFriendships ON Users.id = UserFriendships.UserId
@@ -86,8 +88,10 @@ router.get("/:username/:friendname", (req, res) => {
         UserFriendships.FriendshipId, Friendships.status AS friendship_status,
         DirectMessages.SenderId, IF(SenderId = Users.id, Users.username, Friends.username) AS sender_name,
         IF(SenderId = Users.id, Users.profile_pic, Friends.profile_pic) AS sender_profile_pic,
+        IF(SenderId = Users.id, Users.current_title, Friends.current_title) AS sender_current_title,
         IF(SenderId = Users.id, Friends.id, Users.id) AS ReceiverId, IF(SenderId = Users.id, Friends.username, Users.username) AS receiver_name,
-        IF(SenderId = Users.id, Friends.profile_pic, Users.profile_pic) AS receiver_profile_pic
+        IF(SenderId = Users.id, Friends.profile_pic, Users.profile_pic) AS receiver_profile_pic,
+        IF(SenderId = Users.id, Friends.current_title, Users.current_title) AS receiver_current_title
         
         FROM Users
         LEFT JOIN UserFriendships ON Users.id = UserFriendships.UserId
