@@ -25,7 +25,6 @@ const friendships = [
 ];
 
 
-
 const directMessages = [
     {
         FriendshipId: 1,

@@ -2,43 +2,56 @@ const express = require("express");
 const router = express.Router();
 const { User, Friendship, DirectMessage } = require("../../models")
 const sequelize = require("../../config/connection");
-const { QueryTypes } = require('sequelize');
+const { QueryTypes, Op } = require('sequelize');
 
-
-// `SELECT DirectMessages.id, DirectMessages.message, DirectMessages.createdAt,
-// DirectMessages.FriendshipId, Friendships.status AS FriendshipStatus, Friendships.Friend1Id, Friendships.Friend2Id,
-// DirectMessages.SenderId, IF(SenderId = Friend1Id, Friend1.username, Friend2.username) AS SenderName,
-// IF(SenderId = Friend1Id, Friend2Id, Friend1Id) AS ReceiverId, IF(SenderId = Friend1Id, Friend2.username, Friend1.username) AS ReceiverName
-
-// FROM DirectMessages 
-// LEFT JOIN Friendships ON FriendshipId = Friendships.id
-// LEFT JOIN Users AS Friend1 ON Friend1Id = Friend1.id
-// LEFT JOIN Users AS Friend2 ON Friend2Id = Friend2.id
-// ORDER BY DirectMessages.createdAt;`,
 
 // Routes for /api/dms
 
 // For a specific User, GET the most recent message with each friend (regardless of who was sender vs receiver)
 router.get("/:username", (req, res) => {
+    // User.findOne({
+    //     where: { username: req.params.username },
+    //     attributes: ["id", "username", "current_title", "profile_pic"],
+    //     include: {
+    //         model: Friendship,
+    //         through: {
+    //             attributes: []
+    //         },
+    //         include: [{
+    //             model: User,
+    //             through: {
+    //                 attributes: []
+    //             },
+    //             attributes: ["id", "username", "current_title", "profile_pic"],
+    //             where: { username: {[Op.not]: req.params.username} }
+    //         // // },{
+    //         // //     model: DirectMessage,
+    //         }]
+    //     }
+    // })
     sequelize.query(
         `SELECT DirectMessages.id, DirectMessages.message, DirectMessages.createdAt,
-        DirectMessages.FriendshipId, Friendships.status AS FriendshipStatus, Friendships.Friend1Id, Friendships.Friend2Id,
-        DirectMessages.SenderId, IF(SenderId = Friend1Id, Friend1.username, Friend2.username) AS SenderName,
-        IF(SenderId = Friend1Id, Friend2Id, Friend1Id) AS ReceiverId, IF(SenderId = Friend1Id, Friend2.username, Friend1.username) AS ReceiverName
+        UserFriendships.FriendshipId, Friendships.status AS friendship_status,
+        DirectMessages.SenderId, IF(SenderId = Users.id, Users.username, Friends.username) AS sender_name,
+        IF(SenderId = Users.id, Users.profile_pic, Friends.profile_pic) AS sender_profile_pic,
+        IF(SenderId = Users.id, Friends.id, Users.id) AS ReceiverId, IF(SenderId = Users.id, Friends.username, Users.username) AS receiver_name,
+        IF(SenderId = Users.id, Friends.profile_pic, Users.profile_pic) AS receiver_profile_pic
+        
+        FROM Users
+        LEFT JOIN UserFriendships ON Users.id = UserFriendships.UserId
+        LEFT JOIN Friendships ON UserFriendships.FriendshipId = Friendships.id
+        LEFT JOIN UserFriendships AS FriendFriendships ON Friendships.id=FriendFriendships.FriendshipId
+        LEFT JOIN Users AS Friends ON FriendFriendships.UserId = Friends.id
+        LEFT JOIN DirectMessages ON Friendships.id = DirectMessages.FriendshipId
 
-        FROM DirectMessages 
-        LEFT JOIN Friendships ON FriendshipId = Friendships.id
-        LEFT JOIN Users AS Friend1 ON Friend1Id = Friend1.id
-        LEFT JOIN Users AS Friend2 ON Friend2Id = Friend2.id
         JOIN (
             SELECT FriendshipId, MAX(createdAt) AS createdAt FROM DirectMessages
             GROUP BY FriendshipId
         ) AS Recent 
         ON (DirectMessages.FriendshipId = Recent.FriendshipId AND DirectMessages.createdAt = Recent.createdAt)
-
-        WHERE (Friend1.username = "${req.params.username}" OR Friend2.username = "${req.params.username}" )
-
-        ORDER BY DirectMessages.createdAt;`,
+    
+        WHERE (Users.username = "${req.params.username}" AND FriendFriendships.UserId <> Users.id)
+        ORDER BY DirectMessages.createdAt DESC;`,
         { type: QueryTypes.SELECT }
     ).then(dmArr => {
             if (dmArr.length === 0) {
@@ -56,19 +69,21 @@ router.get("/:username", (req, res) => {
 router.get("/:username/:friendname", (req, res) => {
     sequelize.query(
         `SELECT DirectMessages.id, DirectMessages.message, DirectMessages.createdAt,
-        DirectMessages.FriendshipId, Friendships.status AS FriendshipStatus, Friendships.Friend1Id, Friendships.Friend2Id,
-        DirectMessages.SenderId, IF(SenderId = Friend1Id, Friend1.username, Friend2.username) AS SenderName,
-        IF(SenderId = Friend1Id, Friend2Id, Friend1Id) AS ReceiverId, IF(SenderId = Friend1Id, Friend2.username, Friend1.username) AS ReceiverName
+        UserFriendships.FriendshipId, Friendships.status AS friendship_status,
+        DirectMessages.SenderId, IF(SenderId = Users.id, Users.username, Friends.username) AS sender_name,
+        IF(SenderId = Users.id, Users.profile_pic, Friends.profile_pic) AS sender_profile_pic,
+        IF(SenderId = Users.id, Friends.id, Users.id) AS ReceiverId, IF(SenderId = Users.id, Friends.username, Users.username) AS receiver_name,
+        IF(SenderId = Users.id, Friends.profile_pic, Users.profile_pic) AS receiver_profile_pic
+        
+        FROM Users
+        LEFT JOIN UserFriendships ON Users.id = UserFriendships.UserId
+        LEFT JOIN Friendships ON UserFriendships.FriendshipId = Friendships.id
+        LEFT JOIN UserFriendships AS FriendFriendships ON Friendships.id=FriendFriendships.FriendshipId
+        LEFT JOIN Users AS Friends ON FriendFriendships.UserId = Friends.id
+        LEFT JOIN DirectMessages ON Friendships.id = DirectMessages.FriendshipId
 
-        FROM DirectMessages 
-        LEFT JOIN Friendships ON FriendshipId = Friendships.id
-        LEFT JOIN Users AS Friend1 ON Friend1Id = Friend1.id
-        LEFT JOIN Users AS Friend2 ON Friend2Id = Friend2.id
-
-        WHERE (Friend1.username = "${req.params.username}" AND Friend2.username = "${req.params.friendname}" )
-        OR (Friend1.username = "${req.params.friendname}" AND Friend2.username = "${req.params.username}" )
- 
-        ORDER BY DirectMessages.createdAt;`,
+        WHERE (Users.username = "${req.params.username}" AND Friends.username = "${req.params.friendname}" )
+        ORDER BY DirectMessages.createdAt DESC;`,
         { type: QueryTypes.SELECT }
     ).then(dmArr => {
         if (dmArr.length === 0) {
