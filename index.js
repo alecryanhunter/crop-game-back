@@ -5,12 +5,14 @@ const sequelize = require("./config/connection");
 //TODO: Replace session with JWT
 const session = require("express-session");
 const SequelizeStore = require("connect-session-sequelize")(session.Store);
+const cors = require("cors")
 
 const allRoutes = require("./controllers");
 const PORT = process.env.PORT || 5678;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors())
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
