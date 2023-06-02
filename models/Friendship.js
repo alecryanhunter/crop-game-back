@@ -10,23 +10,9 @@ Friendship.init({
         primaryKey: true,
         autoIncrement: true,
     },
-    Friend1Id: {
-        type: DataTypes.INTEGER,
-        references: {
-        model: 'Users',
-        key: 'id',
-        },
-    },
-    Friend2Id: {
-        type: DataTypes.INTEGER,
-        references: {
-        model: 'Users',
-        key: 'id',
-        },
-    },
     status: {
-        type: DataTypes.STRING,
-        defaultValue: "Pending",
+        type: DataTypes.ENUM,
+        values: ['pending', 'confirmed', 'blocked']
     },
 },{
     sequelize,
