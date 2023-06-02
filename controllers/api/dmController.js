@@ -7,28 +7,55 @@ const { QueryTypes, Op } = require('sequelize');
 
 // Routes for /api/dms
 
-// For a specific User, GET the most recent message with each friend (regardless of who was sender vs receiver)
+// Post new DM
+router.post("/:senderid/:receiverid", async (req, res) => {
+    try {
+                    // Check to confirm both UserIds are valid
+        //     const confirmUserArr = await User.findAll({
+        //         where: { id: [req.params.senderid, req.params.receiverid] }
+        //     })
+        //     if (confirmUserArr.length < 2) {
+        //         return res.status(404).json({ msg: "One or more UserIds not found" });
+        //     } else {
+        //         const friendshipObj = Friendship.create({
+        //             status: 
+        //         })
+        //         return res.json(confirmUserArr.length)
+        //     }
+
+        // Find the Friendship between the 2 Users
+        const friendshipArr = await sequelize.query(
+            `SELECT UserFriendships.FriendshipId
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.id = ${req.params.senderid}
+            INTERSECT 
+                SELECT UserFriendships.FriendshipId
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.id = ${req.params.receiverid};`,
+            { type: QueryTypes.SELECT }
+        )
+        // If the Frienship exists, POST the DM
+        if (friendshipArr.length === 0) {
+            return res.status(404).json({ msg: "Friendship not found" });
+        } else {
+            const dmObj = await DirectMessage.create({
+                SenderId: req.params.senderid,
+                FriendshipId: friendshipArr[0].FriendshipId,
+                message: req.body.message,
+            })
+            return res.json({ msg: "Successfully created", dmObj });
+        }
+    } catch(err) {
+        console.log(err);
+        res.status(500).json({ msg: "Error Occurred", err });
+    }
+});
+
+
+// For a specific User, GET the most recent message with each friend (regardless of who was sender vs receiver), sorted by most recent first
 router.get("/:username", (req, res) => {
-    // User.findOne({
-    //     where: { username: req.params.username },
-    //     attributes: ["id", "username", "current_title", "profile_pic"],
-    //     include: {
-    //         model: Friendship,
-    //         through: {
-    //             attributes: []
-    //         },
-    //         include: [{
-    //             model: User,
-    //             through: {
-    //                 attributes: []
-    //             },
-    //             attributes: ["id", "username", "current_title", "profile_pic"],
-    //             where: { username: {[Op.not]: req.params.username} }
-    //         // // },{
-    //         // //     model: DirectMessage,
-    //         }]
-    //     }
-    // })
     sequelize.query(
         `SELECT DirectMessages.id, DirectMessages.message, DirectMessages.createdAt,
         UserFriendships.FriendshipId, Friendships.status AS friendship_status,
@@ -65,7 +92,7 @@ router.get("/:username", (req, res) => {
         });
     });
 
-// GET all DMs between User and Friend
+// GET all DMs between User and Friend, sorted by most recent first
 router.get("/:username/:friendname", (req, res) => {
     sequelize.query(
         `SELECT DirectMessages.id, DirectMessages.message, DirectMessages.createdAt,
@@ -96,6 +123,7 @@ router.get("/:username/:friendname", (req, res) => {
         res.status(500).json({ msg: "Error Occurred", err });
     });
 });
+
 
 
 module.exports = router;
