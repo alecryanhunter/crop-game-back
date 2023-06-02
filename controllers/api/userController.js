@@ -27,9 +27,8 @@ router.get("/:username", (req, res) => {
         include: [
             Bundle,
             {
-                model: User,
-                as: "Friends",
-                through: Friendship,
+                model: Friendship,
+                through: "UserFriendships",
         }],
     }).then(userObj => {
         if (!userObj) {

@@ -4,12 +4,14 @@ const DirectMessage = require("./DirectMessage");
 const Bundle = require("./Bundle");
 const UserBundle = require("./UserBundle");
 
-// Friendship Many-To-Many Self-Referencing Association
-User.belongsToMany(User, {
-    foreignKey: "Friend1Id",
-    as: "Friend2",
-    through: Friendship,
+// UserFriendships Many-To-Many Association
+User.belongsToMany(Friendship, {
+    through: "UserFriendships",
     onDelete: "CASCADE",
+});
+Friendship.belongsToMany(User, {
+    through: "UserFriendships",
+    onDELETE: "CASCADE",
 });
 
 // DirectMessage Associations : 

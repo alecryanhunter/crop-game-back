@@ -16,21 +16,15 @@ const users = [
 
 const friendships = [
     {
-        Friend1Id: 1,
-        Friend2Id: 2,
         status: "Pending",
     },{
-        Friend1Id: 1,
-        Friend2Id: 3,
         status: "Confirmed",
     },{
-
-        Friend1Id: 2,
-        Friend2Id: 3,
         status: "Blocked",
-
     },
 ];
+
+
 
 const directMessages = [
     {
