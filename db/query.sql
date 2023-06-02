@@ -1,0 +1,4 @@
+INSERT INTO UserFriendships(FriendshipId, UserId, createdAt, updatedAt) VALUES (1,1,"2023-06-02 05:22:28","2023-06-02 05:22:28" ),(1,2,"2023-06-02 05:22:28","2023-06-02 05:22:28"),(2,1,"2023-06-02 05:22:28","2023-06-02 05:22:28"),(2,3,"2023-06-02 05:22:28","2023-06-02 05:22:28"),(3,2,"2023-06-02 05:22:28","2023-06-02 05:22:28"),(3,3,"2023-06-02 05:22:28","2023-06-02 05:22:28");
+
+
+SELECT DirectMessages.id, DirectMessages.SenderId, DirectMessages.message, DirectMessages.FriendshipId, UserFriendships.UserId FROM DirectMessages JOIN UserFriendships ON DirectMessages.FriendshipId = UserFriendships.FriendshipId;
