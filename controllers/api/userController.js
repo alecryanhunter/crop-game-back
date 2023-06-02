@@ -89,29 +89,6 @@ router.post("/:userid/friends/:friendid", async (req, res) => {
     }
 });
 
-// POST new Friendship
-router.post("/:userid/friends/:friendid", async (req, res) => {
-    try {
-        // fetch both users
-        const userObj = await User.findByPk(req.params.userid)
-        const friendObj = await User.findByPk(req.params.friendid)
-        if (!userObj || !friendObj) {
-            return res.status(404).json({ msg: "FriendId not found" });
-        } else {
-            // Create the Friendship
-            const friendshipObj = await Friendship.create({
-                status: "pending",
-            })
-            friendshipObj.addUser(userObj, {through: "UserFriendships"})
-            friendshipObj.addUser(friendObj, {through: "UserFriendships"})
-            // Create both UserFriendships
-            return res.json({ msg: "Successfully created", friendshipObj })
-        }
-    } catch(err) {
-        console.log(err);
-        res.status(500).json({ msg: "Error Occurred", err });
-    }
-});
 
 // PUT Friendship to update status
 router.put("/:userid/friends/:friendid", async (req, res) => {

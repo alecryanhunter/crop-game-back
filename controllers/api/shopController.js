@@ -48,7 +48,7 @@ router.get("/users/:userid", (req, res) => {
             LEFT JOIN Bundles ON UserBundles.BundleId = Bundles.id 
             WHERE UserBundles.UserId = ${req.params.userid}
         )
-        ORDER BY id DESC;`,
+        ORDER BY id ASC;`,
         { type: QueryTypes.SELECT }
     )
     .then(bundleArr => {

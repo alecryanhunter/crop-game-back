@@ -67,7 +67,7 @@ router.get("/:username", (req, res) => {
         ON (DirectMessages.FriendshipId = Recent.FriendshipId AND DirectMessages.createdAt = Recent.createdAt)
     
         WHERE (Users.username = "${req.params.username}" AND FriendFriendships.UserId <> Users.id)
-        ORDER BY DirectMessages.createdAt DESC;`,
+        ORDER BY DirectMessages.createdAt ASC;`,
         { type: QueryTypes.SELECT }
     ).then(dmArr => {
             if (dmArr.length === 0) {
@@ -101,7 +101,7 @@ router.get("/:username/:friendname", (req, res) => {
         LEFT JOIN DirectMessages ON Friendships.id = DirectMessages.FriendshipId
 
         WHERE (Users.username = "${req.params.username}" AND Friends.username = "${req.params.friendname}" )
-        ORDER BY DirectMessages.createdAt DESC;`,
+        ORDER BY DirectMessages.createdAt ASC;`,
         { type: QueryTypes.SELECT }
     ).then(dmArr => {
         if (dmArr.length === 0) {
