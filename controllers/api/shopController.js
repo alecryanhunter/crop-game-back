@@ -36,26 +36,24 @@ router.get("/:bundleid", (req, res) => {
 });
 
 // GET the Bundles NOT already owned by User
-// router.get("/users/:username", (req, res) => {
-//     Bundle.findAll({
-//         where: {
-//             '$Users.username$': { [Op.notIn]: }
-//         },
-//         include: {
-//             model: User,
-//             through: UserBundle
-//         }
-//     })
-//     .then(bundleArr => {
-//         if (bundleArr.length === 0) {
-//             return res.status(404).json({ msg: "No Bundles found" });
-//         } else {
-//             return res.json(bundleArr);
-//         };
-//     }).catch(err => {
-//         console.log(err);
-//         res.status(500).json({ msg: "Error Occurred", err });
-//     });
-// });
+router.get("/users/:userid", (req, res) => {
+    sequelize.query(
+        `SELECT *
+        FROM Bundles
+        LEFT JOIN UserBundle
+        ORDER BY DirectMessages.createdAt DESC;`,
+        { type: QueryTypes.SELECT }
+    )
+    .then(bundleArr => {
+        if (bundleArr.length === 0) {
+            return res.status(404).json({ msg: "No Bundles found" });
+        } else {
+            return res.json(bundleArr);
+        };
+    }).catch(err => {
+        console.log(err);
+        res.status(500).json({ msg: "Error Occurred", err });
+    });
+});
 
 module.exports = router;

@@ -16,14 +16,16 @@ const users = [
 
 const friendships = [
     {
-        status: "Pending",
+        status: "pending",
+        Users: [1, 2],
     },{
-        status: "Confirmed",
+        status: "confirmed",
+        Users: [1, 3],
     },{
-        status: "Blocked",
+        status: "blocked",
+        Users: [3, 2],
     },
 ];
-
 
 const directMessages = [
     {
@@ -79,7 +81,15 @@ const startSeedin = async () => {
     try {
         await sequelize.sync({ force: true });
         await User.bulkCreate(users, { individualHooks: true });
-        await Friendship.bulkCreate(friendships, { individualHooks: true });
+        let newFriendship, user1, user2
+        for (let index = 0; index < friendships.length; index++) {
+            const element = friendships[index];
+            newFriendship = await Friendship.create({status: element.status})
+            user1 = await User.findByPk(element.Users[0])
+            await newFriendship.addUser(user1,{through:"UserFriendships"})
+            user2 = await User.findByPk(element.Users[1])
+            await newFriendship.addUser(user2,{through:"UserFriendships"})
+        }
         await DirectMessage.bulkCreate(directMessages, { individualHooks: true });
         await Bundle.bulkCreate(bundles, { individualHooks: true });
         await UserBundle.bulkCreate(userBundles, { individualHooks: true });

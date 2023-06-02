@@ -30,7 +30,12 @@ router.get("/:username", (req, res) => {
             Bundle,
             {
                 model: Friendship,
-                through: "UserFriendships",
+                through: { attributes:[] },
+                include: {
+                    model: User,
+                    through: { attributes: [] },
+                    where: { username: {[Op.not]: req.params.username}},
+                }
         }],
     }).then(userObj => {
         if (!userObj) {
