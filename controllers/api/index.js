@@ -7,4 +7,7 @@ router.use("/users", userRoutes);
 const dmRoutes = require("./dmController");
 router.use("/dms", dmRoutes);
 
+const shopRoutes = require("./shopController");
+router.use("/shop", shopRoutes);
+
 module.exports = router;
