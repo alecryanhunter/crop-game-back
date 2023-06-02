@@ -10,19 +10,6 @@ const { QueryTypes, Op } = require('sequelize');
 // Post new DM
 router.post("/:senderid/:receiverid", async (req, res) => {
     try {
-                    // Check to confirm both UserIds are valid
-        //     const confirmUserArr = await User.findAll({
-        //         where: { id: [req.params.senderid, req.params.receiverid] }
-        //     })
-        //     if (confirmUserArr.length < 2) {
-        //         return res.status(404).json({ msg: "One or more UserIds not found" });
-        //     } else {
-        //         const friendshipObj = Friendship.create({
-        //             status: 
-        //         })
-        //         return res.json(confirmUserArr.length)
-        //     }
-
         // Find the Friendship between the 2 Users
         const friendshipArr = await sequelize.query(
             `SELECT UserFriendships.FriendshipId

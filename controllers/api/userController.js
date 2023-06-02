@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const { User, Friendship, DirectMessage, Bundle, UserBundle } = require("../../models")
+const sequelize = require("../../config/connection");
+const { QueryTypes, Op } = require('sequelize');
 const bcrypt = require("bcrypt");
 
 // Routes for /api/users
 
-// Get all Users
+// GET all Users
 router.get("/", (req, res) => {
     User.findAll()
     .then(usersArr => {
@@ -20,7 +22,7 @@ router.get("/", (req, res) => {
     });
 });
 
-// Get User by username
+// GET User by username
 router.get("/:username", (req, res) => {
     User.findOne({
         where: { username: req.params.username},
@@ -42,7 +44,7 @@ router.get("/:username", (req, res) => {
     });
 });
 
-// Post new User
+// POST new User
 router.post("/", (req, res) => {
     User.create({
         username: req.body.username,
@@ -58,36 +60,88 @@ router.post("/", (req, res) => {
     });
 });
 
-/*
-// Login
-router.post("/login", (req, res) => {
-    User.findOne({
-        where: { username: req.body.username },
-    }).then(userObj => {
-        if (!userObj) {
-            return res.status(401).json({ msg: "Invalid username/password" });
-        } else if (bcrypt.compareSync(req.body.password, userObj.password)) {
-            req.session.UserId = userObj.id;
-            req.session.loggedIn = true;
-            return res.json([
-                { msg: "Login successful" },
-                req.session,
-            ]);
+// POST new Friendship
+router.post("/:userid/friends/:friendid", async (req, res) => {
+    try {
+        // fetch both users
+        const userObj = await User.findByPk(req.params.userid)
+        const friendObj = await User.findByPk(req.params.friendid)
+        if (!userObj || !friendObj) {
+            return res.status(404).json({ msg: "FriendId not found" });
         } else {
-            return res.status(401).json({ msg: "Invalid username/password" });
-        };
-    }).catch(err => {
+            // Create the Friendship
+            const friendshipObj = await Friendship.create({
+                status: "pending",
+            })
+            friendshipObj.addUser(userObj, {through: "UserFriendships"})
+            friendshipObj.addUser(friendObj, {through: "UserFriendships"})
+            // Create both UserFriendships
+            return res.json({ msg: "Successfully created", friendshipObj })
+        }
+    } catch(err) {
         console.log(err);
-        res.status(500).json({ msg: "Error occurred", err });
-    });
+        res.status(500).json({ msg: "Error Occurred", err });
+    }
 });
 
-// Logout
-router.post("/logout", (req, res) => {
-    req.session.destroy();
-    res.json({ msg: "Logout successful"});
+// POST new Friendship
+router.post("/:userid/friends/:friendid", async (req, res) => {
+    try {
+        // fetch both users
+        const userObj = await User.findByPk(req.params.userid)
+        const friendObj = await User.findByPk(req.params.friendid)
+        if (!userObj || !friendObj) {
+            return res.status(404).json({ msg: "FriendId not found" });
+        } else {
+            // Create the Friendship
+            const friendshipObj = await Friendship.create({
+                status: "pending",
+            })
+            friendshipObj.addUser(userObj, {through: "UserFriendships"})
+            friendshipObj.addUser(friendObj, {through: "UserFriendships"})
+            // Create both UserFriendships
+            return res.json({ msg: "Successfully created", friendshipObj })
+        }
+    } catch(err) {
+        console.log(err);
+        res.status(500).json({ msg: "Error Occurred", err });
+    }
 });
 
+// PUT Friendship to update status
+router.put("/:userid/friends/:friendid", async (req, res) => {
+    try {
+        // Find the Friendship between the 2 Users
+        const friendshipArr = await sequelize.query(
+            `SELECT UserFriendships.FriendshipId
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.id = ${req.params.userid}
+            INTERSECT 
+                SELECT UserFriendships.FriendshipId
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.id = ${req.params.friendid};`,
+            { type: QueryTypes.SELECT }
+        )
+        // If the Frienship exists, POST the DM
+        if (friendshipArr.length === 0) {
+            return res.status(404).json({ msg: "Friendship not found" });
+        } else {
+            const friendshipObj = await Friendship.update({
+                status: req.body.status,
+            },{
+                where: { id: friendshipArr[0].FriendshipId },
+            })
+            return res.json({ msg: "Successfully updated", friendshipObj });
+        }
+    } catch(err) {
+        console.log(err);
+        res.status(500).json({ msg: "Error Occurred", err });
+    }
+});
+
+/*
 // Put update User by id
 router.put("/:id", (req, res) => {
     if (!req.session.loggedIn) {
@@ -129,3 +183,4 @@ router.delete("/:id", (req, res) => {
 */
 
 module.exports = router;
+
