@@ -41,10 +41,6 @@ const directMessages = [
         FriendshipId: 2,
         SenderId: 1,
         message: "Lobby 12",
-    },{
-        FriendshipId: 2,
-        SenderId: 3,
-        message: "OMW!",
     },
 ];
 
