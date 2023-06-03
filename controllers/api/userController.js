@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User, Friendship, DirectMessage, Bundle, UserBundle } = require("../../models");
+const { User, Friendship, Bundle } = require("../../models");
 const sequelize = require("../../config/connection");
 const { QueryTypes, Op } = require('sequelize');
 const bcrypt = require("bcrypt");
@@ -101,6 +101,46 @@ router.post("/", (req, res) => {
     });
 });
 
+// PUT User to update any field other than password (Verify JWT)
+router.put("/:id", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        if (authData.userId !== parseInt(req.params.id)) {
+            return res.status(403).json({ msg: "Not authorized for this UserId" })
+        } else {
+            delete req.body.password // Removes "password" property from the req.body object before update (changing passwords not available yet due to issues with beforeUpdate/beforeBulkUpdate hooks)
+            await User.update(req.body, {
+                where: { id: req.params.id },            })
+            return res.json({ msg: "Successfully updated" });
+        };
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
+// DELETE User (Verify JWT)
+router.delete("/:id", (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        if (authData.userId !== parseInt(req.params.id)) {
+            return res.status(403).json({ msg: "Not authorized for this UserId" })
+        } else {
+            User.destroy({
+                where: { id: req.params.id },
+            })
+            return res.json({ msg: "Successfully deleted" });
+        };
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
+// friendship routes
+
 // POST new Friendship (Verify JWT)
 router.post("/:id/friends/:friend_id", async (req, res) => {
     try {
@@ -163,45 +203,6 @@ router.put("/:id/friends/:friend_id", async (req, res) => {
                 })
                 return res.json({ msg: "Successfully updated" });
             }
-        };
-    } catch (err) {
-        console.log(err);
-        return res.status(403).json({ msg: "Error Occurred", err });
-    };
-});
-
-// PUT User to update any field other than password (Verify JWT)
-router.put("/:id", async (req, res) => {
-    try {
-        const token = req.headers.authorization?.split(" ")[1];
-        const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
-            return res.status(403).json({ msg: "Not authorized for this UserId" })
-        } else {
-            delete req.body.password // Removes "password" property from the req.body object before update (changing passwords not available yet due to issues with beforeUpdate/beforeBulkUpdate hooks)
-            await User.update(req.body, {
-                where: { id: req.params.id },            })
-            return res.json({ msg: "Successfully updated" });
-        };
-    } catch (err) {
-        console.log(err);
-        return res.status(403).json({ msg: "Error Occurred", err });
-    };
-});
-
-
-// DELETE User (Verify JWT)
-router.delete("/:id", (req, res) => {
-    try {
-        const token = req.headers.authorization?.split(" ")[1];
-        const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
-            return res.status(403).json({ msg: "Not authorized for this UserId" })
-        } else {
-            User.destroy({
-                where: { id: req.params.id },
-            })
-            return res.json({ msg: "Successfully deleted" });
         };
     } catch (err) {
         console.log(err);

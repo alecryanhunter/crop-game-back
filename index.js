@@ -1,27 +1,16 @@
 const express = require("express");
 const app = express();
+const cors = require("cors")
+const allRoutes = require("./controllers");
 
 const sequelize = require("./config/connection");
-//TODO: Replace session with JWT
-const session = require("express-session");
-const SequelizeStore = require("connect-session-sequelize")(session.Store);
-
-const cors = require("cors")
-
-const allRoutes = require("./controllers");
 const PORT = process.env.PORT || 5678;
+
+const { User, Friendship, DirectMessage, Bundle, UserBundle } = require("./models");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors())
-
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    cookie: { maxAge: 1000*60*60*2 },
-    resave: false,
-    saveUninitialized: true,
-    store: new SequelizeStore({ db: sequelize }),
-}));
 
 app.use(allRoutes);
 
