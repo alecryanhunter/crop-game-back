@@ -5,6 +5,7 @@ const sequelize = require("./config/connection");
 //TODO: Replace session with JWT
 const session = require("express-session");
 const SequelizeStore = require("connect-session-sequelize")(session.Store);
+
 const cors = require("cors")
 
 const allRoutes = require("./controllers");
