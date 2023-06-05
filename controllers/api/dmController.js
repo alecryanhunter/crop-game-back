@@ -84,7 +84,7 @@ router.get("/:username", async (req, res) => {
                 { type: QueryTypes.SELECT },
             );
             if (dmArr.length === 0) {
-                return res.status(404).json({ msg: "No Users found" });
+                return res.status(204).json({ msg: "No DM history" });
             } else {
                 return res.json(dmArr);
             };
@@ -126,7 +126,7 @@ router.get("/:username/:friendname", async (req, res) => {
                 { type: QueryTypes.SELECT }
                 );
             if (dmArr.length === 0) {
-                return res.status(404).json({ msg: "No Users found" });
+                return res.status(204).json({ msg: "No DM history" });
             } else {
                 return res.json(dmArr);
             };
