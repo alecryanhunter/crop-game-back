@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User, Friendship, Bundle } = require("../../models");
+const { User, Friendship, Bundle, UserBundle } = require("../../models");
 const sequelize = require("../../config/connection");
 const { QueryTypes, Op } = require('sequelize');
 const bcrypt = require("bcrypt");
@@ -77,6 +77,61 @@ router.get("/:username", (req, res) => {
     });
 });
 
+// GET search by like 'username'
+router.get("/search/:username", async (req, res) => {
+    try {
+        const userArr = await User.findAll({
+            where: {
+                username: {
+                    [Op.like]: `%${req.params.username}%`,
+                }
+            },
+        });
+        if (userArr.length === 0) {
+            return res.status(404).json({ msg: "No Users found" });
+        };
+        // Check if there is a token provided
+        const token = req.headers.authorization?.split(" ")[1];
+        // if no token, return the search array 
+        if (!token) {
+            return res.json(userArr);
+        };
+        // if there is a token, fetch the current user's friendships
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        const currentUserObj = await User.findByPk(authData.userId, {
+            include: {
+                model: Friendship,
+                through: { attributes:[] },
+                include: {
+                    model: User,
+                    through: { attributes: [] },
+                    where: { username: {[Op.not]: req.params.username}},
+                }
+            }
+        });
+        // Map over the friendships to create an array of current user's friends
+        const friendArr = currentUserObj.Friendships.map(friendshipObj => {
+            if (friendshipObj.Users[0].id !==  authData.userId) {
+                return friendshipObj.Users[0].id
+            } else {
+                return friendshipObj.Users[1].id
+            }
+        }) 
+        // Iterate thru the search array and set an "isFriend" or an "isSelf" property for each based on the current user's friends array
+        userArr.forEach(userObj => {
+            if (authData.userId === userObj.id) {
+                userObj.setDataValue("isSelf", true)
+            } else if (friendArr.includes(userObj.id)) {
+                userObj.setDataValue("isFriend", true)
+            };
+        });
+        return res.json(userArr);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: "Error Occurred", err });
+    }
+});
+
 // POST new User (Sign JWT)
 router.post("/", (req, res) => {
     User.create({
@@ -101,7 +156,7 @@ router.post("/", (req, res) => {
     });
 });
 
-// PUT User to update any field other than password (Verify JWT)
+// PUT User to update any input field other than password (Verify JWT)
 router.put("/:id", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -109,8 +164,12 @@ router.put("/:id", async (req, res) => {
         if (authData.userId !== parseInt(req.params.id)) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
-            delete req.body.password // Removes "password" property from the req.body object before update (changing passwords not available yet due to issues with beforeUpdate/beforeBulkUpdate hooks)
-            await User.update(req.body, {
+            await User.update({
+                username: req.body.username,
+                email: req.body.email,
+                bio: req.body.bio,
+                profile_pic: req.body.profile_pic,
+            },{
                 where: { id: req.params.id },            })
             return res.json({ msg: "Successfully updated" });
         };
@@ -138,6 +197,43 @@ router.delete("/:id", (req, res) => {
         return res.status(403).json({ msg: "Error Occurred", err });
     };
 });
+
+
+// user's bundles routes
+
+// POST User to add UserBundles (Verify JWT)
+router.post("/:id/bundles/:bundle_id", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        if (authData.userId !== parseInt(req.params.id)) {
+            return res.status(403).json({ msg: "Not authorized for this UserId" })
+        } else {
+            const bundleObj = await Bundle.findOne({ 
+                where: {id: req.params.bundle_id} 
+            })
+            if (!bundleObj) {
+                return res.status(404).json({ msg: "Bundle not found" });
+            } else {
+                await User.decrement({ 
+                    coins: bundleObj.price,
+                    },{ where: { id: req.params.id},
+                });
+                await UserBundle.create({
+                    UserId: req.params.id,
+                    BundleId: req.params.bundle_id,
+                },{
+                    where: { id: req.params.id },            
+                });
+                return res.json({ msg: "Successfully updated" });
+            };
+        };
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
 
 // friendship routes
 
@@ -203,6 +299,43 @@ router.put("/:id/friends/:friend_id", async (req, res) => {
                 })
                 return res.json({ msg: "Successfully updated" });
             }
+        };
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
+// DELETE Friendship (Verify JWT)
+router.delete("/:id/friends/:friend_id", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        if (authData.userId !== parseInt(req.params.id)) {
+            return res.status(403).json({ msg: "Not authorized for this UserId" })
+        } else {
+            // Find the Friendship between the 2 Users
+            const friendshipArr = await sequelize.query(
+                `SELECT UserFriendships.FriendshipId
+                    FROM Users 
+                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                    WHERE Users.id = ${req.params.id}
+                INTERSECT 
+                    SELECT UserFriendships.FriendshipId
+                    FROM Users 
+                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                    WHERE Users.id = ${req.params.friend_id};`,
+                { type: QueryTypes.SELECT }
+            )
+            // If the Frienship exists, delete it
+            if (friendshipArr.length === 0) {
+                return res.status(404).json({ msg: "Friendship not found" });
+            } else {
+                Friendship.destroy({
+                    where: { id: friendshipArr[0].FriendshipId },
+                })
+                return res.json({ msg: "Successfully deleted" });
+            };
         };
     } catch (err) {
         console.log(err);
