@@ -209,24 +209,28 @@ router.post("/:id/bundles/:bundle_id", async (req, res) => {
         if (authData.userId !== parseInt(req.params.id)) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
+            // fetch the bundle to be purchased
             const bundleObj = await Bundle.findOne({ 
                 where: {id: req.params.bundle_id} 
             })
             if (!bundleObj) {
                 return res.status(404).json({ msg: "Bundle not found" });
-            } else {
-                await User.decrement({ 
-                    coins: bundleObj.price,
-                    },{ where: { id: req.params.id},
-                });
-                await UserBundle.create({
-                    UserId: req.params.id,
-                    BundleId: req.params.bundle_id,
-                },{
-                    where: { id: req.params.id },            
-                });
-                return res.json({ msg: "Successfully updated" });
             };
+            // fetch the user who is purchasing
+            const userObj = await User.findByPk(req.params.id);
+            if (userObj.coins < bundleObj.price) {
+                return res.status(418).json({ msg: "Insufficent coins in your teapot" });
+            };
+            await userObj.update({
+                coins: userObj.coins - bundleObj.price
+            })
+            await UserBundle.create({
+                UserId: req.params.id,
+                BundleId: req.params.bundle_id,
+            },{
+                where: { id: req.params.id },            
+            });
+            return res.json({ msg: "Successfully updated" });
         };
     } catch (err) {
         console.log(err);
