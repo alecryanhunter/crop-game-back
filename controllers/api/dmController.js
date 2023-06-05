@@ -34,7 +34,7 @@ router.post("/:username/:friendname", async (req, res) => {
                 return res.status(404).json({ msg: "Friendship not found" });
             } else {
                 const dmObj = await DirectMessage.create({
-                    SenderId: req.params.sender_id,
+                    SenderId: authData.userId,
                     FriendshipId: friendshipArr[0].FriendshipId,
                     message: req.body.message,
                 })
