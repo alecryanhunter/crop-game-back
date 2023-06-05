@@ -343,5 +343,43 @@ router.delete("/:id/friends/:friend_id", async (req, res) => {
     };
 });
 
+
+
+// ADMIN JWT REQUIRED: 
+// PUT User to add Wins/Losses/Forfeits/Coins
+router.put("/:id/:stat/:coins", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        if (authData.password !== process.env.ADMIN_PASSWORD) {
+            return res.status(403).json({ msg: "Not Authorized: ADMIN access only" })
+        } else {
+            if (req.params.stat === "wins") {
+                await User.increment({ 
+                    wins: 1,
+                    coins: req.params.coins
+                    },{ where: { id : req.params.id},
+                });
+            } else if (req.params.stat === "losses") {
+                await User.increment({ 
+                    losses: 1,
+                    coins: req.params.coins
+                    },{ where: { id : req.params.id},
+                });
+            } else if (req.params.stat === "forfeits") {
+                await User.increment({ 
+                    forfeits: 1,
+                    coins: req.params.coins
+                    },{ where: { id : req.params.id},
+                });
+            };
+            return res.json({ msg: "Successfully updated" });
+        };
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
 module.exports = router;
 
