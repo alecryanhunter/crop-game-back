@@ -1,6 +1,6 @@
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../config/connection");
-const brcrypt = require("bcrypt");
+const bcrypt = require("bcrypt");
 
 class User extends Model{};
 User.init({
@@ -34,7 +34,10 @@ User.init({
     },
     coins: {
         type: DataTypes.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
+        validate: {
+            min: 0,
+        },
     },
     wins: {
         type: DataTypes.INTEGER,
@@ -52,7 +55,7 @@ User.init({
     sequelize,
     hooks: {
         beforeCreate: userObj => {
-            userObj.password = brcrypt.hashSync(userObj.password, 3);
+            userObj.password = bcrypt.hashSync(userObj.password, 3);
             return userObj;
         },
     },
