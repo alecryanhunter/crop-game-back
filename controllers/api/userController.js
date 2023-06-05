@@ -165,7 +165,6 @@ router.put("/:id", async (req, res) => {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             await User.update({
-                username: req.body.username,
                 email: req.body.email,
                 bio: req.body.bio,
                 profile_pic: req.body.profile_pic,

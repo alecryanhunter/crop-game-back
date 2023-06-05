@@ -9,11 +9,11 @@ const jwt = require("jsonwebtoken");
 // Routes for /api/dms
 
 // POST new DM (Verify JWT)
-router.post("/:sender_id/:receiver_id", async (req, res) => {
+router.post("/:username/:friendname", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.sender_id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // Find the Friendship between the 2 Users
@@ -21,12 +21,12 @@ router.post("/:sender_id/:receiver_id", async (req, res) => {
                 `SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.id = ${req.params.sender_id}
+                    WHERE Users.username = "${req.params.username}"
                 INTERSECT 
                     SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.id = ${req.params.receiver_id};`,
+                    WHERE Users.username = "${req.params.friendname}";`,
                 { type: QueryTypes.SELECT }
             )
             // If the Frienship exists, POST the DM
