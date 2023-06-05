@@ -69,6 +69,7 @@ router.get("/:username", (req, res) => {
         if (!userObj) {
             return res.status(404).json({ msg: "UserId not found" });
         } else {
+            const temp = userObj.Friendships
             return res.json(userObj);
         };
     }).catch(err => {
