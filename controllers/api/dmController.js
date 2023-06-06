@@ -8,7 +8,8 @@ const jwt = require("jsonwebtoken");
 
 // Routes for /api/dms
 
-// POST new DM (Verify JWT)
+// POST new DM 
+// (Verify JWT)
 router.post("/:username/:friendname", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
