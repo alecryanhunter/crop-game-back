@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User, Friendship, Bundle, UserBundle } = require("../../models");
+const { User, Friendship, DirectMessage, Bundle, UserBundle } = require("../../models");
 const sequelize = require("../../config/connection");
 const { QueryTypes, Op } = require('sequelize');
 const bcrypt = require("bcrypt");
@@ -242,16 +242,18 @@ router.post("/:id/bundles/:bundle_id", async (req, res) => {
 // friendship routes
 
 // POST new Friendship (Verify JWT)
-router.post("/:id/friends/:friend_id", async (req, res) => {
-    try {
+router.post("/:username/friends/:friendname", async (req, res) => {
+    // try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // Get both users
-            const userObj = await User.findByPk(req.params.id)
-            const friendObj = await User.findByPk(req.params.friend_id)
+            const userObj = await User.findByPk(authData.userId)
+            const friendObj = await User.findOne({ 
+                where: { username: req.params.friendname }
+            })
             if (!userObj || !friendObj) {
                 return res.status(404).json({ msg: "FriendId not found" });
             } else {
@@ -259,16 +261,21 @@ router.post("/:id/friends/:friend_id", async (req, res) => {
                 const friendshipObj = await Friendship.create({
                     status: "pending",
                 })
+                // Attach both UserFriendships
                 friendshipObj.addUser(userObj, {through: "UserFriendships"})
                 friendshipObj.addUser(friendObj, {through: "UserFriendships"})
-                // Create both UserFriendships
+                await DirectMessage.create({
+                    SenderId: authData.userId,
+                    FriendshipId: friendshipObj.id,
+                    message: `You have a new friend request from ${req.params.username}`,
+                })
                 return res.json({ msg: "Successfully created", friendshipObj })
             }
         };
-    } catch (err) {
-        console.log(err);
-        return res.status(403).json({ msg: "Error Occurred", err });
-    };
+    // } catch (err) {
+    //     console.log(err);
+    //     return res.status(403).json({ msg: "Error Occurred", err });
+    // };
 });
 
 // PUT Friendship to update status (Verify JWT)
