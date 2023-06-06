@@ -38,6 +38,7 @@ router.get("/:bundleid", (req, res) => {
 });
 
 // GET the Bundles NOT already owned by User
+// TODO change to username
 router.get("/users/:userid", (req, res) => {
     sequelize.query(
         `SELECT Bundles.*

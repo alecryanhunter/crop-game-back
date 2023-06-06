@@ -158,6 +158,7 @@ router.post("/", (req, res) => {
 });
 
 // PUT User to update any input field other than password (Verify JWT)
+// TODO change to username
 router.put("/:id", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -180,6 +181,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE User (Verify JWT)
+// TODO change to username
 router.delete("/:id", (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -202,6 +204,8 @@ router.delete("/:id", (req, res) => {
 // user's bundles routes
 
 // POST User to add UserBundles (Verify JWT)
+// TODO change to username
+
 router.post("/:id/bundles/:bundle_id", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -243,42 +247,60 @@ router.post("/:id/bundles/:bundle_id", async (req, res) => {
 
 // POST new Friendship (Verify JWT)
 router.post("/:username/friends/:friendname", async (req, res) => {
-    // try {
+    try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
         if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // Get both users
-            const userObj = await User.findByPk(authData.userId)
+            const userObj = await User.findByPk(authData.userId, {
+                include: {
+                    model: Friendship,
+                    through: { attributes:[] },
+                    include: {
+                        model: User,
+                        through: { attributes: [] },
+                        where: { username: {[Op.not]: req.params.username}},
+                    }
+                }, 
+            })
             const friendObj = await User.findOne({ 
                 where: { username: req.params.friendname }
             })
             if (!userObj || !friendObj) {
                 return res.status(404).json({ msg: "FriendId not found" });
-            } else {
-                // Create the Friendship
-                const friendshipObj = await Friendship.create({
-                    status: "pending",
-                })
-                // Attach both UserFriendships
-                friendshipObj.addUser(userObj, {through: "UserFriendships"})
-                friendshipObj.addUser(friendObj, {through: "UserFriendships"})
-                await DirectMessage.create({
-                    SenderId: authData.userId,
-                    FriendshipId: friendshipObj.id,
-                    message: `You have a new friend request from ${req.params.username}`,
-                })
-                return res.json({ msg: "Successfully created", friendshipObj })
-            }
+            };
+            // Check if friendship already exists
+            const currentFriendsArr = userObj.Friendships.map(friendshipObj => friendshipObj.Users[0].id);
+            
+            if (currentFriendsArr.includes(friendObj.id)) {
+                return res.status(400).json({ msg: "Friendship already exists" });
+            };
+            // Create the Friendship
+            const friendshipObj = await Friendship.create({
+                status: "pending",
+            })
+
+            // Attach both UserFriendships
+            friendshipObj.addUser(userObj, {through: "UserFriendships"})
+            friendshipObj.addUser(friendObj, {through: "UserFriendships"})
+            await DirectMessage.create({
+                SenderId: authData.userId,
+                FriendshipId: friendshipObj.id,
+                message: `You have a new friend request from ${req.params.username}`,
+            })
+            return res.json({ msg: "Successfully created", friendshipObj })
+            
         };
-    // } catch (err) {
-    //     console.log(err);
-    //     return res.status(403).json({ msg: "Error Occurred", err });
-    // };
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
 });
 
 // PUT Friendship to update status (Verify JWT)
+// TODO change to username
 router.put("/:id/friends/:friend_id", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -318,6 +340,7 @@ router.put("/:id/friends/:friend_id", async (req, res) => {
 });
 
 // DELETE Friendship (Verify JWT)
+// TODO change to username
 router.delete("/:id/friends/:friend_id", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -358,6 +381,7 @@ router.delete("/:id/friends/:friend_id", async (req, res) => {
 
 // ADMIN JWT REQUIRED: 
 // PUT User to add Wins/Losses/Forfeits/Coins
+// TODO change to username
 router.put("/:id/:stat/:coins", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
