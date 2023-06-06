@@ -8,7 +8,8 @@ const jwt = require("jsonwebtoken");
 
 // Routes for /api/users
 
-// Login (Sign JWT)
+// Login 
+// (Sign JWT)
 router.post("/login", (req,res) => {
     User.findOne({
         where: { username: req.body.username }
@@ -79,6 +80,7 @@ router.get("/:username", (req, res) => {
 });
 
 // GET search by like 'username'
+// JWT is optional: if provided, adds an attribute of "isSelf" and/or "isFriend" as applicable based on the the current User
 router.get("/search/:username", async (req, res) => {
     try {
         const userArr = await User.findAll({
@@ -133,7 +135,8 @@ router.get("/search/:username", async (req, res) => {
     }
 });
 
-// POST new User (Sign JWT)
+// POST new User
+// (Sign JWT)
 router.post("/", (req, res) => {
     User.create({
         username: req.body.username,
@@ -157,13 +160,13 @@ router.post("/", (req, res) => {
     });
 });
 
-// PUT User to update any input field other than password (Verify JWT)
-// TODO change to username
-router.put("/:id", async (req, res) => {
+// PUT User to update any input field other than password 
+// (Verify JWT)
+router.put("/:username", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             await User.update({
@@ -171,7 +174,8 @@ router.put("/:id", async (req, res) => {
                 bio: req.body.bio,
                 profile_pic: req.body.profile_pic,
             },{
-                where: { id: req.params.id },            })
+                where: { username: req.params.username },            
+            })
             return res.json({ msg: "Successfully updated" });
         };
     } catch (err) {
@@ -180,17 +184,17 @@ router.put("/:id", async (req, res) => {
     };
 });
 
-// DELETE User (Verify JWT)
-// TODO change to username
-router.delete("/:id", (req, res) => {
+// DELETE User
+// (Verify JWT)
+router.delete("/:username", (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             User.destroy({
-                where: { id: req.params.id },
+                where: { username: req.params.username },
             })
             return res.json({ msg: "Successfully deleted" });
         };
@@ -201,16 +205,15 @@ router.delete("/:id", (req, res) => {
 });
 
 
-// user's bundles routes
+// UserBundles routes --------------------------------------------
 
-// POST User to add UserBundles (Verify JWT)
-// TODO change to username
-
-router.post("/:id/bundles/:bundle_id", async (req, res) => {
+// POST User to add UserBundles
+// (Verify JWT)
+router.post("/:username/bundles/:bundle_id", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // fetch the bundle to be purchased
@@ -221,7 +224,7 @@ router.post("/:id/bundles/:bundle_id", async (req, res) => {
                 return res.status(404).json({ msg: "Bundle not found" });
             };
             // fetch the user who is purchasing
-            const userObj = await User.findByPk(req.params.id);
+            const userObj = await User.findOne({ where: { username: req.params.username }});
             if (userObj.coins < bundleObj.price) {
                 return res.status(418).json({ msg: "Insufficent coins in your teapot" });
             };
@@ -229,10 +232,8 @@ router.post("/:id/bundles/:bundle_id", async (req, res) => {
                 coins: userObj.coins - bundleObj.price
             })
             await UserBundle.create({
-                UserId: req.params.id,
-                BundleId: req.params.bundle_id,
-            },{
-                where: { id: req.params.id },            
+                UserId: userObj.id,
+                BundleId: bundleObj.id,
             });
             return res.json({ msg: "Successfully updated" });
         };
@@ -243,9 +244,10 @@ router.post("/:id/bundles/:bundle_id", async (req, res) => {
 });
 
 
-// friendship routes
+// Friendship routes --------------------------------------------
 
-// POST new Friendship (Verify JWT)
+// POST new Friendship
+// (Verify JWT)
 router.post("/:username/friends/:friendname", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
@@ -281,7 +283,6 @@ router.post("/:username/friends/:friendname", async (req, res) => {
             const friendshipObj = await Friendship.create({
                 status: "pending",
             })
-
             // Attach both UserFriendships
             friendshipObj.addUser(userObj, {through: "UserFriendships"})
             friendshipObj.addUser(friendObj, {through: "UserFriendships"})
@@ -299,33 +300,34 @@ router.post("/:username/friends/:friendname", async (req, res) => {
     };
 });
 
-// PUT Friendship to update status (Verify JWT)
-// TODO change to username
-router.put("/:id/friends/:friend_id", async (req, res) => {
+// PUT Friendship to update status
+// (Verify JWT)
+router.put("/:username/friends/:friendname", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // Find the Friendship between the 2 Users
             const friendshipArr = await sequelize.query(
                 `SELECT UserFriendships.FriendshipId
-                    FROM Users 
-                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.id = ${req.params.id}
-                INTERSECT 
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.username = "${req.params.username}"
+                INTERSECT (
                     SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.id = ${req.params.friend_id};`,
+                    WHERE Users.username = "${req.params.friendname}"
+                );`,
                 { type: QueryTypes.SELECT }
             )
             // If the Frienship exists, POST the DM
             if (friendshipArr.length === 0) {
                 return res.status(404).json({ msg: "Friendship not found" });
             } else {
-                const friendshipObj = await Friendship.update({
+                await Friendship.update({
                     status: req.body.status,
                 },{
                     where: { id: friendshipArr[0].FriendshipId },
@@ -339,26 +341,27 @@ router.put("/:id/friends/:friend_id", async (req, res) => {
     };
 });
 
-// DELETE Friendship (Verify JWT)
-// TODO change to username
-router.delete("/:id/friends/:friend_id", async (req, res) => {
+// DELETE Friendship
+// (Verify JWT)
+router.delete("/:username/friends/:friendname", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        if (authData.userId !== parseInt(req.params.id)) {
+        if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // Find the Friendship between the 2 Users
             const friendshipArr = await sequelize.query(
                 `SELECT UserFriendships.FriendshipId
-                    FROM Users 
-                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.id = ${req.params.id}
-                INTERSECT 
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.username = "${req.params.username}"
+                INTERSECT (
                     SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.id = ${req.params.friend_id};`,
+                    WHERE Users.username = "${req.params.friendname}"
+                );`,
                 { type: QueryTypes.SELECT }
             )
             // If the Frienship exists, delete it
@@ -381,8 +384,7 @@ router.delete("/:id/friends/:friend_id", async (req, res) => {
 
 // ADMIN JWT REQUIRED: 
 // PUT User to add Wins/Losses/Forfeits/Coins
-// TODO change to username
-router.put("/:id/:stat/:coins", async (req, res) => {
+router.put("/:username/:stat/:coins", async (req, res) => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
         const authData = jwt.verify(token, process.env.JWT_SECRET);
@@ -393,19 +395,19 @@ router.put("/:id/:stat/:coins", async (req, res) => {
                 await User.increment({ 
                     wins: 1,
                     coins: req.params.coins
-                    },{ where: { id : req.params.id},
+                    },{ where: { username : req.params.username},
                 });
             } else if (req.params.stat === "losses") {
                 await User.increment({ 
                     losses: 1,
                     coins: req.params.coins
-                    },{ where: { id : req.params.id},
+                    },{ where: { username : req.params.username},
                 });
             } else if (req.params.stat === "forfeits") {
                 await User.increment({ 
                     forfeits: 1,
                     coins: req.params.coins
-                    },{ where: { id : req.params.id},
+                    },{ where: { username : req.params.username},
                 });
             };
             return res.json({ msg: "Successfully updated" });
