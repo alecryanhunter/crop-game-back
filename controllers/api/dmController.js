@@ -56,7 +56,7 @@ router.get("/:username", async (req, res) => {
         if (authData.username.toLowerCase() !== req.params.username.toLowerCase()) {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
-            const dmArr = await sequelize.query(
+            const dbArr = await sequelize.query(
                 `SELECT DirectMessages.id, DirectMessages.message, DirectMessages.createdAt,
                 UserFriendships.FriendshipId, Friendships.status AS friendship_status,
                 DirectMessages.SenderId, IF(SenderId = Users.id, Users.username, Friends.username) AS sender_name,
@@ -80,13 +80,18 @@ router.get("/:username", async (req, res) => {
                 ON (DirectMessages.FriendshipId = Recent.FriendshipId AND DirectMessages.createdAt = Recent.createdAt)
             
                 WHERE (Users.username = "${req.params.username}" AND FriendFriendships.UserId <> Users.id)
-                ORDER BY DirectMessages.createdAt ASC;`,
+                ORDER BY DirectMessages.createdAt DESC;`,
                 { type: QueryTypes.SELECT },
             );
-            if (dmArr.length === 0) {
+            if (dbArr.length === 0) {
                 return res.status(204).json({ msg: "No DM history" });
             } else {
-                return res.json(dmArr);
+                const dmListObj = {
+                    pending_friendships: dbArr.filter(dmObj =>  dmObj.friendship_status === "pending"),
+                    confirmed_friendships: dbArr.filter(dmObj =>  dmObj.friendship_status === "confirmed"),
+                    blocked_friendships: dbArr.filter(dmObj =>  dmObj.friendship_status === "blocked"),
+                }
+                return res.json(dmListObj);
             };
         };
     } catch (err) {
