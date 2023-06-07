@@ -171,6 +171,7 @@ router.put("/:username", async (req, res) => {
         } else {
             await User.update({
                 email: req.body.email,
+                current_title: req.body.current_title,
                 bio: req.body.bio,
                 profile_pic: req.body.profile_pic,
             },{
