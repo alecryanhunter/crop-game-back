@@ -31,6 +31,7 @@ User.init({
     },
     profile_pic: {
         type: DataTypes.STRING,
+        defaultValue: "/cropposition/4oB9_vecteezy_vector-illustration-of-cat-farmer-cartoon_.jpg.crop",
     },
     coins: {
         type: DataTypes.INTEGER,
