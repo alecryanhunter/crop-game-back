@@ -49,6 +49,10 @@ const bundles = [
         type: "Title",
         price: 0,
     },{
+        name: "Potato",
+        type: "Skin",
+        price: 0,
+    },{
         name: "Farmer",
         type: "Title",
         price: 5,
@@ -56,7 +60,7 @@ const bundles = [
         name: "Carrots",
         type: "Skin",
         price: 1,
-    }
+    },
 ];
 
 const userBundles = [
