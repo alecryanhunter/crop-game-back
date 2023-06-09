@@ -76,8 +76,9 @@ router.get("/:username", (req, res) => {
                 model: User,
                 through: { attributes: [] },
                 where: { username: {[Op.not]: req.params.username}},
-            }
+            },
         }],
+        order:[ [Friendship, "createdAt", "DESC"]]
     }).then(userObj => {
         if (!userObj) {
             return res.status(404).json({ msg: "UserId not found" });
