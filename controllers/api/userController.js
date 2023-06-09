@@ -35,6 +35,18 @@ router.post("/login", (req,res) => {
     });
 });
 
+// Verify JWT
+router.post("/verify", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        return res.json({ token: token, username: authData.username });
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
 // GET all Users
 router.get("/", (req, res) => {
     User.findAll()
