@@ -143,11 +143,11 @@ router.get("/search/:username", async (req, res) => {
         // Iterate thru the search array and set an "isFriend" or an "isSelf" property for each based on the current user's friends array
         userArr.forEach(userObj => {
             if (authData.userId === userObj.id) {
-                userObj.setDataValue("isSelf", true)
+                userObj.setDataValue("status", "self")
             } else if (friendArr.includes(userObj.id)) {
-                userObj.setDataValue("isFriend", true)
+                userObj.setDataValue("status", "friend")
             } else if (pendingArr.includes(userObj.id)) {
-                userObj.setDataValue("isPending", true)
+                userObj.setDataValue("status", "pending")
             };
         });
         return res.json(userArr);
