@@ -16,13 +16,13 @@ const users = [
 
 const friendships = [
     {
-        status: "pending",
+        status: "confirmed",
         Users: [1, 2],
     },{
         status: "confirmed",
         Users: [1, 3],
     },{
-        status: "blocked",
+        status: "confirmed",
         Users: [3, 2],
     },
 ];
@@ -41,10 +41,12 @@ const directMessages = [
 
 const bundles = [
     {
+        id: 1,
         name: "Core",
         type: "GamePlay",
         price: 0,
     },{
+        id: 2,
         name: "Trainee",
         type: "Title",
         price: 0,

@@ -167,6 +167,15 @@ router.post("/", (req, res) => {
         bio: req.body.bio,
         profile_pic: req.body.profile_pic,
     }).then(userObj => {
+        UserBundle.bulkCreate([
+            {
+                UserId: userObj.id,
+                BundleId: 1,
+            },{
+                UserId: userObj.id,
+                BundleId: 2,
+            },
+        ], { individualHooks: true });
         const token = jwt.sign(
             {
                 username: userObj.username,
