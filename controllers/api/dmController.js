@@ -22,12 +22,12 @@ router.post("/:username/:friendname", async (req, res) => {
                 `SELECT UserFriendships.FriendshipId
                 FROM Users 
                 LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                WHERE Users.username = "${req.params.username}"
+                WHERE Users.username = "${req.params.username.toLowerCase()}"
                 INTERSECT (
                     SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.username = "${req.params.friendname}"
+                    WHERE Users.username = "${req.params.friendname.toLowerCase()}"
                 );`,
                 { type: QueryTypes.SELECT }
             )
