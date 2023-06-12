@@ -72,9 +72,21 @@ const bundles = [
         type: "Title",
         price: 20,
     },{
+        name: "Spud Bud",
+        type: "Title",
+        price: 20,
+    },{
+        name: "Tear Inducer",
+        type: "Title",
+        price: 20,
+    },{
         name: "Harvest Jester",
         type: "Title",
         price: 50,
+    },{
+        name: "Pastoralist",
+        type: "Title",
+        price: 100,   
     },{
         name: "Crop Queen",
         type: "Title",
