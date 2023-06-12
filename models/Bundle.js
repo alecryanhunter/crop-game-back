@@ -14,6 +14,9 @@ Bundle.init({
     price: {
         type: DataTypes.INTEGER,
     },
+    cssClass: {
+        type: DataTypes.STRING,
+    },
 },{
   sequelize,
 });

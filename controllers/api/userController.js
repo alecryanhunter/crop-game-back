@@ -35,6 +35,18 @@ router.post("/login", (req,res) => {
     });
 });
 
+// Verify JWT
+router.post("/verify", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        const authData = jwt.verify(token, process.env.JWT_SECRET);
+        return res.json({ token: token, username: authData.username });
+    } catch (err) {
+        console.log(err);
+        return res.status(403).json({ msg: "Error Occurred", err });
+    };
+});
+
 // GET all Users
 router.get("/", (req, res) => {
     User.findAll()
@@ -64,8 +76,9 @@ router.get("/:username", (req, res) => {
                 model: User,
                 through: { attributes: [] },
                 where: { username: {[Op.not]: req.params.username}},
-            }
+            },
         }],
+        order:[ [Friendship, "createdAt", "DESC"]]
     }).then(userObj => {
         if (!userObj) {
             return res.status(404).json({ msg: "UserId not found" });
@@ -113,19 +126,28 @@ router.get("/search/:username", async (req, res) => {
             }
         });
         // Map over the friendships to create an array of current user's friends
-        const friendArr = currentUserObj.Friendships.map(friendshipObj => {
+        const friendArr = currentUserObj.Friendships.filter(friendshipObj => friendshipObj.status === "confirmed").map(friendshipObj => {
             if (friendshipObj.Users[0].id !==  authData.userId) {
                 return friendshipObj.Users[0].id
             } else {
                 return friendshipObj.Users[1].id
             }
         }) 
+        const pendingArr = currentUserObj.Friendships.filter(friendshipObj => friendshipObj.status === "pending").map(friendshipObj => {
+            if (friendshipObj.Users[0].id !==  authData.userId) {
+                return friendshipObj.Users[0].id
+            } else {
+                return friendshipObj.Users[1].id
+            }
+        })
         // Iterate thru the search array and set an "isFriend" or an "isSelf" property for each based on the current user's friends array
         userArr.forEach(userObj => {
             if (authData.userId === userObj.id) {
-                userObj.setDataValue("isSelf", true)
+                userObj.setDataValue("status", "self")
             } else if (friendArr.includes(userObj.id)) {
-                userObj.setDataValue("isFriend", true)
+                userObj.setDataValue("status", "friend")
+            } else if (pendingArr.includes(userObj.id)) {
+                userObj.setDataValue("status", "pending")
             };
         });
         return res.json(userArr);
@@ -145,6 +167,15 @@ router.post("/", (req, res) => {
         bio: req.body.bio,
         profile_pic: req.body.profile_pic,
     }).then(userObj => {
+        UserBundle.bulkCreate([
+            {
+                UserId: userObj.id,
+                BundleId: 1,
+            },{
+                UserId: userObj.id,
+                BundleId: 2,
+            },
+        ], { individualHooks: true });
         const token = jwt.sign(
             {
                 username: userObj.username,
