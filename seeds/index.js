@@ -16,7 +16,7 @@ const users = [
         username: "Rhonda",
         password: "password",
         bio: "Bootcamp soon-to-be grad, Cropposition Co-Founder, Deployment Dominatrix",
-        current_title: "Cropposition Founder and CEO"
+        current_title: "Cropposition Founder and COO"
     },
 ];
 
