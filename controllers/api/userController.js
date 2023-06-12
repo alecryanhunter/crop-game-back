@@ -355,7 +355,7 @@ router.put("/:username/friends/:friendname", async (req, res) => {
                 );`,
                 { type: QueryTypes.SELECT }
             )
-            // If the Frienship exists, POST the DM
+            // If the Frienship exists, PUT the friendship
             if (friendshipArr.length === 0) {
                 return res.status(404).json({ msg: "Friendship not found" });
             } else {
