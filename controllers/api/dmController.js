@@ -20,15 +20,15 @@ router.post("/:username/:friendname", async (req, res) => {
             // Find the Friendship between the 2 Users
             const friendshipArr = await sequelize.query(
                 `SELECT UserFriendships.FriendshipId
-                    FROM Users 
-                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.username = "${req.params.username}"
+                FROM Users 
+                LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
+                WHERE Users.username = "${req.params.username}"
                 INTERSECT (
                     SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
                     WHERE Users.username = "${req.params.friendname}"
-                    );`,
+                );`,
                 { type: QueryTypes.SELECT }
             )
             // If the Frienship exists, POST the DM
