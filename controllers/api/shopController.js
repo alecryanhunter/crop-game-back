@@ -27,31 +27,16 @@ router.get("/:bundleid", (req, res) => {
 // JWT is optional: if not provided, returns ALL Bundles. If provided, returns only Bundles NOT already owned by User
 router.get("/", async (req, res) => {
     try {
-        // Check if there is a token provided
         const token = req.headers.authorization?.split(" ")[1];
-        // if no token, return all Bundles 
-        if (!token) {
-            const allBundlesArr = await Bundle.findAll()
-            if (allBundlesArr.length === 0) {
-                return res.status(404).json({ msg: "No Bundles found" });
-            } else {
-                return res.json(allBundlesArr);
-            };
-        };
-        // if there is a token, return only Bundles NOT already owned by User
         const authData = jwt.verify(token, process.env.JWT_SECRET);
-        const filteredBundleArr = await sequelize.query(
-            `SELECT Bundles.*
-            FROM Bundles
-            EXCEPT (
-                SELECT Bundles.*
-                FROM UserBundles
-                LEFT JOIN Bundles ON UserBundles.BundleId = Bundles.id 
-                WHERE UserBundles.UserId = ${authData.userId}
-            )
-            ORDER BY id ASC;`,
-            { type: QueryTypes.SELECT }
-        )
+
+        const allBundlesArr = await Bundle.findAll()
+        const userBundleArr = await UserBundle.findAll({
+            where: { UserId: authData.userId}
+        })
+        const userBundleIDArr = userBundleArr.map(bundleObj => bundleObj.BundleId)
+        const filteredBundleArr = allBundlesArr.filter(bundleObj => !userBundleIDArr.includes(bundleObj.id))
+
         if (filteredBundleArr.length === 0) {
             return res.status(404).json({ msg: "No Bundles found" });
         } else {
