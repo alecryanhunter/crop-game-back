@@ -23,11 +23,12 @@ router.post("/:username/:friendname", async (req, res) => {
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
                     WHERE Users.username = "${req.params.username}"
-                INTERSECT 
+                INTERSECT (
                     SELECT UserFriendships.FriendshipId
                     FROM Users 
                     LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.username = "${req.params.friendname}";`,
+                    WHERE Users.username = "${req.params.friendname}"
+                    );`,
                 { type: QueryTypes.SELECT }
             )
             // If the Frienship exists, POST the DM
