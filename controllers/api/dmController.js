@@ -32,16 +32,16 @@ router.post("/:username/:friendname", async (req, res) => {
                 { type: QueryTypes.SELECT }
             )
             // If the Frienship exists, POST the DM
-            if (friendshipArr.length === 0) {
-                return res.status(404).json({ msg: "Friendship not found" });
-            } else {
-                const dmObj = await DirectMessage.create({
-                    SenderId: authData.userId,
-                    FriendshipId: friendshipArr[0].FriendshipId,
-                    message: req.body.message,
-                })
-                return res.json({ msg: "Successfully created", dmObj });
-            }
+            // if (friendshipArr.length === 0) {
+            //     return res.status(404).json({ msg: "Friendship not found" });
+            // } else {
+            //     const dmObj = await DirectMessage.create({
+            //         SenderId: authData.userId,
+            //         FriendshipId: friendshipArr[0].FriendshipId,
+            //         message: req.body.message,
+            //     })
+            //     return res.json({ msg: "Successfully created", dmObj });
+            // }
         };
     } catch (err) {
         console.log(err);
