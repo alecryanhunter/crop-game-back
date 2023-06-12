@@ -18,29 +18,31 @@ router.post("/:username/:friendname", async (req, res) => {
             return res.status(403).json({ msg: "Not authorized for this UserId" })
         } else {
             // Find the Friendship between the 2 Users
-            const friendshipArr = await sequelize.query(
-                `SELECT UserFriendships.FriendshipId
-                    FROM Users 
-                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.username = "${req.params.username}"
-                INTERSECT 
-                    SELECT UserFriendships.FriendshipId
-                    FROM Users 
-                    LEFT JOIN UserFriendships on Users.id = UserFriendships.Userid
-                    WHERE Users.username = "${req.params.friendname}";`,
-                { type: QueryTypes.SELECT }
-            )
-            // If the Frienship exists, POST the DM
+            const userObj = await User.findOne({ 
+                where: { username: req.params.username},
+                include: {
+                    model: Friendship,
+                    through: {attributes: [] },
+                    include: {
+                        model: User,
+                        through: {attributes: [] },
+                        where: { username: {[Op.not]: req.params.username}},
+                    },
+                },
+            });
+            const friendshipArr = userObj.Friendships.filter(friendshipObj => friendshipObj.Users[0].username.toLowerCase() === req.params.friendname.toLowerCase())
+            // // If the Frienship exists, POST the DM
             if (friendshipArr.length === 0) {
                 return res.status(404).json({ msg: "Friendship not found" });
             } else {
                 const dmObj = await DirectMessage.create({
                     SenderId: authData.userId,
-                    FriendshipId: friendshipArr[0].FriendshipId,
+                    FriendshipId: friendshipArr[0].id,
                     message: req.body.message,
                 })
                 return res.json({ msg: "Successfully created", dmObj });
             }
+
         };
     } catch (err) {
         console.log(err);
